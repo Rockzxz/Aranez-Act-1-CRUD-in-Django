@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Tracker Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; 
+            display: flex; justify-content: space-between; align-items: center; }
+        
+        
+        .form-row { display: flex; gap: 15px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; 
+            border-radius: 8px; border: 1px solid #e9ecef; align-items: flex-start; }
+        
+        
+        input { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; outline: none; width: 25%; }
+        
+        
+        select { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; outline: none; width: 30%; }
+        
+        
+        select[multiple] { height: 42px; width: 40%; } 
+        
+        
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; 
+            transition: background 0.2s; white-space: nowrap; }
+        .btn-submit { background-color: #28a745; color: white; }
+        .btn-submit:hover { background-color: #218838; }
+        .btn-submit.updating { background-color: #ffc107; color: #333; } 
+        .btn-cancel { background-color: #6c757d; color: white; display: none; }
+        
+       
+        .btn-edit { background-color: #17a2b8; color: white; padding: 6px 12px; font-size: 0.9em; margin-right: 5px; }
+        .btn-delete { background-color: #dc3545; color: white; padding: 6px 12px; font-size: 0.9em; }
+
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        th { background-color: #343a40; color: white; text-align: left; padding: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        
+        .tag { display: inline-block; background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 0.85em; margin: 2px; border: 1px solid #ccc; }
+        .master-table th { background-color: #007bff; }
+        .col-id { width: 8%; }
+        .col-name { width: 25%; }
+        .col-extra { width: 40%; }
+        .col-action { width: 27%; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="text-align: center; margin-bottom: 40px; color: #444;">Project Tracker System</h1>
+
+    <div class="card">
+        <h2>1. Departments</h2>
+        <div class="form-row">
+            <input type="hidden" id="deptId">
+            <input type="text" id="deptInput" placeholder="Department Name" style="flex-grow: 1;"> 
+            <button class="btn-submit" id="deptBtn" onclick="saveDepartment()">+ Add Department</button>
+            <button class="btn-cancel" id="deptCancel" onclick="resetForm('dept')">Cancel</button>
+        </div>
+        <table>
+            <thead><tr><th class="col-id">ID</th><th>Dept Name</th><th class="col-action">Action</th></tr></thead>
+            <tbody id="deptTable"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>2. Projects</h2>
+        <div class="form-row">
+            <input type="hidden" id="projId">
+            <input type="text" id="projInput" placeholder="Project Name" style="width: 45%;">
+            <select id="projDeptSelect" style="width: 35%;"><option>Loading...</option></select>
+            <button class="btn-submit" id="projBtn" onclick="saveProject()">+ Add Project</button>
+            <button class="btn-cancel" id="projCancel" onclick="resetForm('proj')">Cancel</button>
+        </div>
+        <table>
+            <thead><tr><th class="col-id">ID</th><th class="col-name">Project Name</th><th class="col-extra">Department</th><th class="col-action">Action</th></tr></thead>
+            <tbody id="projTable"></tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>3. Employees</h2>
+        <p style="font-size: 0.8em; color: #666; margin-top: -10px;">Hold Ctrl to select multiple projects.</p>
+        <div class="form-row">
+            <input type="hidden" id="empId">
+            <input type="text" id="empFirst" placeholder="First Name" style="width: 25%;">
+            <input type="text" id="empLast" placeholder="Last Name" style="width: 25%;">
+            <select id="empProjectSelect" multiple style="width: 30%; height: 42px;"><option>Loading...</option></select>
+            <button class="btn-submit" id="empBtn" onclick="saveEmployee()">+ Add Employee</button>
+            <button class="btn-cancel" id="empCancel" onclick="resetForm('emp')">Cancel</button>
+        </div>
+        <table>
+            <thead><tr><th class="col-id">ID</th><th class="col-name">Full Name</th><th class="col-extra">Projects</th><th class="col-action">Action</th></tr></thead>
+            <tbody id="empTable"></tbody>
+        </table>
+    </div>
+
+    <div class="card" style="border: 2px solid #007bff;">
+        <h2 style="color: #007bff; border-color: #007bff;">Master Report</h2>
+        <table class="master-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">Department</th>
+                    <th style="width: 30%;">Managed Projects</th>
+                    <th style="width: 40%;">Assigned Employees</th>
+                </tr>
+            </thead>
+            <tbody id="masterTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API = 'http://127.0.0.1:8000/api/';
+    
+    let projects = [], departments = [], employees = [];
+
+    async function loadAll() {
+        const [pRes, dRes, eRes] = await Promise.all([
+            fetch(API + 'projects/'),
+            fetch(API + 'departments/'),
+            fetch(API + 'employees/')
+        ]);
+
+        projects = await pRes.json();
+        departments = await dRes.json();
+        employees = await eRes.json();
+
+        renderDepartments();
+        renderProjects();
+        renderEmployees();
+        renderMasterReport(); 
+    }
+
+    function renderDepartments() {
+        const tbody = document.getElementById('deptTable');
+        const projSel = document.getElementById('projDeptSelect');
+        
+        tbody.innerHTML = departments.map(d => `<tr>
+            <td>${d.DeptID}</td>
+            <td><strong>${d.DeptName}</strong></td>
+            <td class="col-action">
+                <button class="btn-edit" onclick="editDept(${d.DeptID}, '${d.DeptName}')">Edit</button>
+                <button class="btn-delete" onclick="deleteItem('departments', ${d.DeptID})">Delete</button>
+            </td>
+        </tr>`).join('');
+
+        if (departments.length === 0) {
+            projSel.innerHTML = '<option value="">No Department</option>';
+        } else {
+            projSel.innerHTML = '<option value="">-- Select Department --</option>' + 
+                                departments.map(d => `<option value="${d.DeptID}">${d.DeptName}</option>`).join('');
+        }
+    }
+
+    function renderProjects() {
+        const tbody = document.getElementById('projTable');
+        const empSel = document.getElementById('empProjectSelect');
+        
+        tbody.innerHTML = projects.map(p => {
+            const dName = departments.find(d => d.DeptID == p.Department)?.DeptName || 'Unknown';
+            return `<tr>
+                <td>${p.ProjectID}</td>
+                <td>${p.ProjectName}</td>
+                <td>${dName}</td>
+                <td class="col-action">
+                    <button class="btn-edit" onclick="editProject(${p.ProjectID}, '${p.ProjectName}', ${p.Department})">Edit</button>
+                    <button class="btn-delete" onclick="deleteItem('projects', ${p.ProjectID})">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        if (projects.length === 0) {
+            empSel.innerHTML = '<option value="">No Projects</option>';
+        } else {
+            empSel.innerHTML = projects.map(p => `<option value="${p.ProjectID}">${p.ProjectName}</option>`).join('');
+        }
+    }
+
+    function renderEmployees() {
+        const tbody = document.getElementById('empTable');
+        tbody.innerHTML = employees.map(e => {
+            const pNames = e.Projects.map(pid => {
+                const p = projects.find(proj => proj.ProjectID == pid);
+                return p ? `<span class="tag">${p.ProjectName}</span>` : '';
+            }).join('');
+            
+            return `<tr>
+                <td>${e.EmployeeID}</td>
+                <td>${e.FirstName} ${e.LastName}</td>
+                <td>${pNames}</td>
+                <td class="col-action">
+                    <button class="btn-edit" onclick="editEmp(${e.EmployeeID}, '${e.FirstName}', '${e.LastName}', [${e.Projects}])">Edit</button>
+                    <button class="btn-delete" onclick="deleteItem('employees', ${e.EmployeeID})">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderMasterReport() {
+        const tbody = document.getElementById('masterTable');
+        tbody.innerHTML = '';
+        if(departments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">No Departments Found</td></tr>'; return;
+        }
+        departments.forEach(dept => {
+            const deptProjects = projects.filter(p => p.Department === dept.DeptID);
+            let projHtml = deptProjects.length ? deptProjects.map(p => `<div class="tag" style="background:#cfe2ff;border-color:#b6d4fe;">
+                ${p.ProjectName}</div>`).join('') : '<em style="color:#999">None</em>';
+            
+            let empHtml = '<em style="color:#999">None</em>';
+            const deptEmps = new Set();
+            deptProjects.forEach(p => {
+                const working = employees.filter(e => e.Projects.includes(p.ProjectID));
+                working.forEach(w => deptEmps.add(w));
+            });
+            if(deptEmps.size > 0) empHtml = Array.from(deptEmps).map(e => `<span class="tag">${e.FirstName} ${e.LastName}</span>`).join(' ');
+
+            tbody.innerHTML += `<tr><td>${dept.DeptName}</td><td>${projHtml}</td><td>${empHtml}</td></tr>`;
+        });
+    }
+
+    async function saveDepartment() {
+        const id = document.getElementById('deptId').value;
+        const name = document.getElementById('deptInput').value;
+        if(!name) return alert("Enter Name");
+        await saveData('departments', id, {DeptName: name});
+    }
+
+    async function saveProject() {
+        const id = document.getElementById('projId').value;
+        const name = document.getElementById('projInput').value;
+        const deptId = document.getElementById('projDeptSelect').value;
+        if(!name) return alert("Enter Data");
+        await saveData('projects', id, {ProjectName: name, Department: deptId});
+    }
+
+    async function saveEmployee() {
+        const id = document.getElementById('empId').value;
+        const first = document.getElementById('empFirst').value;
+        const last = document.getElementById('empLast').value;
+        const select = document.getElementById('empProjectSelect');
+        const pids = Array.from(select.selectedOptions).map(o => o.value);
+        if(!first || !last) return alert("Enter Data");
+        await saveData('employees', id, {FirstName: first, LastName: last, Projects: pids});
+    }
+
+    async function saveData(endpoint, id, payload) {
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API}${endpoint}/${id}/` : `${API}${endpoint}/`;
+        await fetch(url, { method: method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        resetForm(endpoint.substring(0, 4) === 'dept' ? 'dept' : (endpoint.substring(0, 4) === 'proj' ? 'proj' : 'emp'));
+        loadAll();
+    }
+
+    function editDept(id, name) {
+        document.getElementById('deptId').value = id;
+        document.getElementById('deptInput').value = name;
+        toggleEditMode('dept', true);
+    }
+    function editProject(id, name, deptId) {
+        document.getElementById('projId').value = id;
+        document.getElementById('projInput').value = name;
+        document.getElementById('projDeptSelect').value = deptId;
+        toggleEditMode('proj', true);
+    }
+    function editEmp(id, first, last, pids) {
+        document.getElementById('empId').value = id;
+        document.getElementById('empFirst').value = first;
+        document.getElementById('empLast').value = last;
+        const select = document.getElementById('empProjectSelect');
+        Array.from(select.options).forEach(opt => opt.selected = pids.includes(parseInt(opt.value)));
+        toggleEditMode('emp', true);
+    }
+
+    async function deleteItem(endpoint, id) {
+        if(confirm("Are you sure?")) { await fetch(`${API}${endpoint}/${id}/`, { method: 'DELETE' }); loadAll(); }
+    }
+
+    function resetForm(type) {
+        document.getElementById(type + 'Id').value = '';
+        if(type === 'dept') document.getElementById('deptInput').value = ''; 
+        if(type === 'proj') { document.getElementById('projInput').value = ''; document.getElementById('projDeptSelect').value = ''; }
+        if(type === 'emp') { document.getElementById('empFirst').value = ''; document.getElementById('empLast').value = ''; 
+        document.getElementById('empProjectSelect').selectedIndex = -1; }
+        toggleEditMode(type, false);
+    }
+
+    function toggleEditMode(type, isEditing) {
+        const btn = document.getElementById(type + 'Btn');
+        const cancel = document.getElementById(type + 'Cancel');
+        if (isEditing) { btn.innerText = "Update"; btn.classList.add('updating'); cancel.style.display = 'inline-block'; } 
+        else { btn.innerText = "+ Add"; btn.classList.remove('updating'); cancel.style.display = 'none'; }
+    }
+
+    loadAll();
+</script>
+
+</body>
+</html>
