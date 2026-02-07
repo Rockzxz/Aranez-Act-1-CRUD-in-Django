@@ -2,14 +2,14 @@ from django.db import models
 
 class Department(models.Model):
     DeptID = models.AutoField(primary_key=True)
-    DeptName = models.CharField(max_length=50)
+    DeptName = models.CharField(max_length=20)
 
     def __str__(self):
         return self.DeptName
 
 class Project(models.Model):
     ProjectID = models.AutoField(primary_key=True)
-    ProjectName = models.CharField(max_length=50)
+    ProjectName = models.CharField(max_length=20)
     Department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -17,8 +17,8 @@ class Project(models.Model):
 
 class Employees(models.Model):
     EmployeeID = models.AutoField(primary_key=True)
-    FirstName = models.CharField(max_length=50)
-    LastName = models.CharField(max_length=50)
+    FirstName = models.CharField(max_length=20)
+    LastName = models.CharField(max_length=20)
     Projects = models.ManyToManyField(Project)
 
     def __str__(self):
